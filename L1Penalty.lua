@@ -29,7 +29,7 @@ function L1Penalty:updateGradInput(input, gradOutput)
     
     self.gradInput:resizeAs(input):copy(input):sign():mul(m)
     
-    if self.provideOutput == true then 
+    if gradOutput ~= nil then 
         self.gradInput:add(gradOutput)  
     end 
 
