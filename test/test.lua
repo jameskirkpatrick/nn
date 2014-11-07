@@ -21,35 +21,58 @@ local function equal(t1, t2, msg)
    end
 end
 
+
 function nntest.Add()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
-   local input = torch.Tensor(ini,inj,ink):zero()
-   local module = nn.Add(ini*inj*ink)
+   local inj_vals = {math.random(3,5), 1}  -- Also test the inj = 1 spatial case
+   local ini = math.random(3,5)
+   local ink = math.random(3,5)
 
-   local err = jac.testJacobian(module,input)
-   mytester:assertlt(err,precision, 'error on state ')
-   local err = jac.testJacobianParameters(module, input, module.bias, module.gradBias)
-   mytester:assertlt(err,precision, 'error on bias ')
+   for ind, inj in pairs(inj_vals) do
+      local input = torch.Tensor(ini,inj,ink):zero()
+      local module = nn.Add(ini,inj,ink)
 
-   local err = jac.testJacobianUpdateParameters(module, input, module.bias)
-   mytester:assertlt(err,precision, 'error on bias [direct update]')
+      -- 1D
+      local err = jac.testJacobian(module,input)
+      mytester:assertlt(err,precision, 'error on state ')
 
-   for t,err in pairs(jac.testAllUpdate(module, input, 'bias', 'gradBias')) do
-      mytester:assertlt(err, precision, string.format(
-                         'error on bias [%s]', t))
-   end
+      local err = jac.testJacobianParameters(module, input, module.bias, module.gradBias)
+      mytester:assertlt(err,precision, 'error on bias ')
 
-   local ferr,berr = jac.testIO(module,input)
-   mytester:asserteq(ferr, 0, torch.typename(module) .. ' - i/o forward err ')
-   mytester:asserteq(berr, 0, torch.typename(module) .. ' - i/o backward err ')
+      local err = jac.testJacobianUpdateParameters(module, input, module.bias)
+      mytester:assertlt(err,precision, 'error on bias [direct update] ')
+
+      for t,err in pairs(jac.testAllUpdate(module, input, 'bias', 'gradBias')) do
+         mytester:assertlt(err, precision, string.format('error on bias [%s]', t))
+      end
+
+      -- 2D
+      local nframe = math.random(50,70)
+      local input = torch.Tensor(nframe, ini,inj,ink):zero()
+
+      local err = jac.testJacobian(module,input)
+      mytester:assertlt(err,precision, 'error on state ')
+
+      local err = jac.testJacobianParameters(module, input, module.bias, module.gradBias)
+      mytester:assertlt(err,precision, 'error on bias ')
+
+      local err = jac.testJacobianUpdateParameters(module, input, module.bias)
+      mytester:assertlt(err,precision, 'error on bias [direct update] ')
+
+      for t,err in pairs(jac.testAllUpdate(module, input, 'bias', 'gradBias')) do
+         mytester:assertlt(err, precision, string.format('error on bias [%s]', t))
+      end
+
+      -- IO
+      local ferr,berr = jac.testIO(module,input)
+      mytester:asserteq(ferr, 0, torch.typename(module) .. ' - i/o forward err ')
+      mytester:asserteq(berr, 0, torch.typename(module) .. ' - i/o backward err ')
+   end 
 end
 
 function nntest.CMul()
-   local ini = math.random(5,15)
-   local inj = math.random(5,15)
-   local ink = math.random(5,15)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.CMul(ini*inj*ink)
 
@@ -103,9 +126,9 @@ function nntest.ReLU()
 end
 
 function nntest.Exp()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.Exp()
 
@@ -118,9 +141,9 @@ function nntest.Exp()
 end
 
 function nntest.Log()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.Log()
 
@@ -133,9 +156,9 @@ function nntest.Log()
 end
 
 function nntest.HardTanh()
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
    
    local module = nn.HardTanh()
@@ -149,9 +172,9 @@ function nntest.HardTanh()
 end
 
 function nntest.Abs()
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
    
    local module = nn.Abs()
@@ -165,9 +188,9 @@ function nntest.Abs()
 end
 
 function nntest.Threshold()
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
 
    local module = nn.Threshold(torch.uniform(-2,2),torch.uniform(-2,2))
@@ -181,9 +204,9 @@ function nntest.Threshold()
 end
 
 function nntest.HardShrink()
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
 
    local module = nn.HardShrink(math.random()/2)
@@ -197,9 +220,9 @@ function nntest.HardShrink()
 end
 
 function nntest.SoftShrink()
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
 
    local module = nn.SoftShrink(math.random()/2)
@@ -213,15 +236,15 @@ function nntest.SoftShrink()
 end
 
 function nntest.Power()
-   local in1 = torch.rand(10,20)
+   local in1 = torch.rand(5,7)
    local module = nn.Power(2)
    local out = module:forward(in1)
    local err = out:dist(in1:cmul(in1))
-   mytester:asserteq(err, 0, torch.typename(module) .. ' - forward err ')
+   mytester:assertlt(err, 1e-15, torch.typename(module) .. ' - forward err ')
 
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local pw = torch.uniform()*math.random(1,10)
    local input = torch.Tensor(ink, inj, ini):zero()
 
@@ -236,15 +259,15 @@ function nntest.Power()
 end
 
 function nntest.Square()
-   local in1 = torch.rand(10,20)
+   local in1 = torch.rand(5,7)
    local module = nn.Square()
    local out = module:forward(in1)
    local err = out:dist(in1:cmul(in1))
-   mytester:asserteq(err, 0, torch.typename(module) .. ' - forward err ')
+   mytester:assertlt(err, 1e-15, torch.typename(module) .. ' - forward err ')
 
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
 
    local module = nn.Square()
@@ -258,15 +281,15 @@ function nntest.Square()
 end
 
 function nntest.Sqrt()
-   local in1 = torch.rand(10,20)
+   local in1 = torch.rand(5,7)
    local module = nn.Sqrt()
    local out = module:forward(in1)
    local err = out:dist(in1:sqrt())
-   mytester:asserteq(err, 0, torch.typename(module) .. ' - forward err ')
+   mytester:assertlt(err, 1e-15, torch.typename(module) .. ' - forward err ')
 
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
 
    local module = nn.Sqrt()
@@ -280,8 +303,8 @@ function nntest.Sqrt()
 end
 
 function nntest.Linear()
-   local ini = math.random(5,7)
-   local inj_vals = {math.random(5,7), 1}  -- Also test the inj = 1 spatial case
+   local ini = math.random(3,5)
+   local inj_vals = {math.random(3,5), 1}  -- Also test the inj = 1 spatial case
    local input = torch.Tensor(ini):zero()
 
    for ind, inj in pairs(inj_vals) do
@@ -350,9 +373,9 @@ function nntest.Linear()
 end
 
 function nntest.SparseLinear()
-   local ini = math.random(5000,10000)
-   local inj = math.random(50,100)
-   local numNonzero = math.random(5,20)
+   local ini = math.random(50,100)
+   local inj = math.random(5,10)
+   local numNonzero = math.random(3,5)
    
    local module = nn.SparseLinear(ini,inj)
 
@@ -412,8 +435,8 @@ function nntest.SparseLinear()
 end
 
 function nntest.Euclidean()
-   local ini = math.random(50,70)
-   local inj = math.random(50,70)
+   local ini = math.random(5,7)
+   local inj = math.random(5,7)
    local input = torch.Tensor(ini):zero()
    local module = nn.Euclidean(ini,inj)
 
@@ -429,8 +452,8 @@ function nntest.Euclidean()
 end
 
 function nntest.WeightedEuclidean()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(13,5)
    local input = torch.Tensor(ini):zero()
    local module = nn.WeightedEuclidean(ini,inj)
 
@@ -475,40 +498,63 @@ local function criterionJacobianTest1D(cri, input, target)
 end
 
 function nntest.MSECriterion()
-   local input = torch.rand(100)
-   local target = input:clone():add(torch.rand(100))
+   local input = torch.rand(10)
+   local target = input:clone():add(torch.rand(10))
    local cri = nn.MSECriterion()
    criterionJacobianTest1D(cri, input, target)   
 end
 
-function nntest.WeightedMSECriterion()
+function nntest.MarginCriterion()
    local input = torch.rand(100)
    local target = input:clone():add(torch.rand(100))
-   local cri = nn.WeightedMSECriterion(torch.rand(100))
+   local cri = nn.MarginCriterion()
+   criterionJacobianTest1D(cri, input, target)   
+end
+
+function nntest.WeightedMSECriterion()
+   local input = torch.rand(10)
+   local target = input:clone():add(torch.rand(10))
+   local cri = nn.WeightedMSECriterion(torch.rand(10))
    criterionJacobianTest1D(cri, input, target)
 end
 
 function nntest.BCECriterion()
    local eps = 1e-2
-   local input = torch.rand(100)*(1-eps) + eps/2
-   local target = torch.rand(100)*(1-eps) + eps/2
+   local input = torch.rand(10)*(1-eps) + eps/2
+   local target = torch.rand(10)*(1-eps) + eps/2
    local cri = nn.BCECriterion()
    criterionJacobianTest1D(cri, input, target)
 end
 
 function nntest.DistKLDivCriterion()
-   local input = torch.rand(100)
-   local target = input:clone():add(torch.rand(100))
+   local input = torch.rand(10)
+   local target = input:clone():add(torch.rand(10))
    local cri = nn.DistKLDivCriterion(true)  -- sizeAverage = true
    criterionJacobianTest1D(cri, input, target)
    cri = nn.DistKLDivCriterion(false)  -- sizeAverage = false
    criterionJacobianTest1D(cri, input, target)
 end
 
+function nntest.ClassNLLCriterion()
+   local numLabels = math.random(5,10)	
+   local input = torch.rand(numLabels)
+   local target = math.random(1,numLabels)	
+
+   -- default ClassNLLCriterion
+   local cri = nn.ClassNLLCriterion()
+   criterionJacobianTest1D(cri, input, target)
+
+   -- ClassNLLCriterion with weights
+   local weights = torch.rand(numLabels)
+   weights = weights / weights:sum()
+   cri = nn.ClassNLLCriterion(weights)
+   criterionJacobianTest1D(cri, input, target)
+end
+
 function nntest.LogSigmoid()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.LogSigmoid()
 
@@ -521,8 +567,8 @@ function nntest.LogSigmoid()
 end
 
 function nntest.LogSoftmax()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
    local input = torch.Tensor(ini,inj):zero()
    local module = nn.LogSoftMax()
 
@@ -549,9 +595,9 @@ end
 -- end
 
 function nntest.Max()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj*ink):zero()
    local module = nn.Max(1)
 
@@ -564,9 +610,9 @@ function nntest.Max()
 end
 
 function nntest.Min()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj*ink):zero()
    local module = nn.Min(1)
 
@@ -579,9 +625,9 @@ function nntest.Min()
 end
 
 function nntest.Mean()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.Mean(torch.random(1,3))
 
@@ -594,9 +640,9 @@ function nntest.Mean()
 end
 
 function nntest.Mul()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.Mul(ini*inj*ink)
 
@@ -618,9 +664,9 @@ function nntest.Mul()
 end
 
 function nntest.Sigmoid()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.Sigmoid()
 
@@ -633,8 +679,8 @@ function nntest.Sigmoid()
 end
 
 function nntest.Softmax()
-   local ini = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, ini):zero()
    local module = nn.SoftMax()
 
@@ -647,8 +693,8 @@ function nntest.Softmax()
 end
 
 function nntest.Softmin()
-   local ini = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, ini):zero()
    local module = nn.SoftMin()
 
@@ -661,8 +707,8 @@ function nntest.Softmin()
 end
 
 function nntest.Softsign()
-   local ini = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, ini):zero()
    local module = nn.SoftSign()
 
@@ -675,9 +721,9 @@ function nntest.Softsign()
 end
 
 function nntest.SoftPlus()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.SoftPlus()
 
@@ -690,9 +736,9 @@ function nntest.SoftPlus()
 end
 
 function nntest.SpatialSubtractiveNormalization_2dkernel()
-   local inputSize = math.random(11,20)
-   local kersize = 9
-   local nbfeatures = math.random(5,10)
+   local inputSize = math.random(6,9)
+   local kersize = 3
+   local nbfeatures = math.random(3,5)
    local kernel = torch.Tensor(kersize,kersize):fill(1)
    local module = nn.SpatialSubtractiveNormalization(nbfeatures,kernel)
    local input = torch.rand(nbfeatures,inputSize,inputSize)
@@ -706,9 +752,9 @@ function nntest.SpatialSubtractiveNormalization_2dkernel()
 end
 
 function nntest.SpatialSubtractiveNormalization_1dkernel()
-   local inputSize = math.random(11,20)
-   local kersize = 9
-   local nbfeatures = math.random(5,10)
+   local inputSize = math.random(6,9)
+   local kersize = 3
+   local nbfeatures = math.random(3,5)
    local kernel = torch.Tensor(kersize):fill(1)
    local module = nn.SpatialSubtractiveNormalization(nbfeatures,kernel)
    local input = torch.rand(nbfeatures,inputSize,inputSize)
@@ -722,9 +768,9 @@ function nntest.SpatialSubtractiveNormalization_1dkernel()
 end
 
 function nntest.SpatialDivisiveNormalization_2dkernel()
-   local inputSize = math.random(11,20)
-   local kersize = 9
-   local nbfeatures = math.random(5,10)
+   local inputSize = math.random(6,9)
+   local kersize = 3
+   local nbfeatures = math.random(3,5)
    local kernel = torch.Tensor(kersize,kersize):fill(1)
    local module = nn.SpatialDivisiveNormalization(nbfeatures,kernel)
    local input = torch.rand(nbfeatures,inputSize,inputSize)
@@ -738,9 +784,9 @@ function nntest.SpatialDivisiveNormalization_2dkernel()
 end
 
 function nntest.SpatialDivisiveNormalization_1dkernel()
-   local inputSize = math.random(11,20)
-   local kersize = 9
-   local nbfeatures = math.random(5,10)
+   local inputSize = math.random(6,9)
+   local kersize = 3
+   local nbfeatures = math.random(3,5)
    local kernel = torch.Tensor(kersize):fill(1)
    local module = nn.SpatialDivisiveNormalization(nbfeatures,kernel)
    local input = torch.rand(nbfeatures,inputSize,inputSize)
@@ -754,14 +800,14 @@ function nntest.SpatialDivisiveNormalization_1dkernel()
 end
 
 function nntest.SpatialConvolution()
-   local from = math.random(1,10)
-   local to = math.random(1,10)
-   local ki = math.random(1,10)
-   local kj = math.random(1,10)
+   local from = math.random(1,5)
+   local to = math.random(1,5)
+   local ki = math.random(1,5)
+   local kj = math.random(1,5)
    local si = math.random(1,4)
    local sj = math.random(1,4)
-   local outi = math.random(10,20)
-   local outj = math.random(10,20)
+   local outi = math.random(5,7)
+   local outj = math.random(5,7)
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
    local module = nn.SpatialConvolution(from, to, ki, kj, si, sj)
@@ -919,15 +965,15 @@ function nntest.SpatialConvolutionMM()
 end
 
 function nntest.SpatialConvolutionMap()
-   local from = math.random(1,10)
+   local from = math.random(1,5)
    local fanin = math.random(1, from)
-   local to = math.random(1,10)
-   local ki = math.random(1,10)
-   local kj = math.random(1,10)
-   local si = math.random(1,4)
-   local sj = math.random(1,4)
-   local outi = math.random(10,20)
-   local outj = math.random(10,20)
+   local to = math.random(1,5)
+   local ki = math.random(1,5)
+   local kj = math.random(1,5)
+   local si = math.random(1,3)
+   local sj = math.random(1,3)
+   local outi = math.random(5,9)
+   local outj = math.random(5,9)
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
 
@@ -960,14 +1006,14 @@ end
 
 
 function nntest.SpatialFullConvolution()
-   local from = math.random(1,10)
-   local to = math.random(1,10)
-   local ki = math.random(1,10)
-   local kj = math.random(1,10)
+   local from = math.random(1,5)
+   local to = math.random(1,5)
+   local ki = math.random(1,5)
+   local kj = math.random(1,5)
    local si = math.random(1,4)
    local sj = math.random(1,4)
-   local ini = math.random(10,18)
-   local inj = math.random(10,18)
+   local ini = math.random(5,8)
+   local inj = math.random(5,8)
    local module = nn.SpatialFullConvolution(from, to, ki, kj, si, sj)
    local input = torch.Tensor(from, inj, ini):zero()
    
@@ -1035,16 +1081,16 @@ function nntest.SpatialFullConvolution()
 end
 
 function nntest.SpatialFullConvolutionMap()
-   local from = math.ceil(torch.uniform(2,5))
-   local to = math.ceil(torch.uniform(2,7))
-   local fanin = math.ceil(torch.uniform(1, from))
+   local from = math.random(2,4)
+   local to = math.random(2,5)
+   local fanin = math.random(1, from)
    local tt = nn.tables.random(from, to, fanin)
-   local ki = math.ceil(torch.uniform(2,7))
-   local kj = math.ceil(torch.uniform(2,7))
-   local si = math.ceil(torch.uniform(1,3))
-   local sj = math.ceil(torch.uniform(1,3))
-   local ini = math.ceil(torch.uniform(10,18))
-   local inj = math.ceil(torch.uniform(10,18))
+   local ki = math.random(2,5)
+   local kj = math.random(2,5)
+   local si = math.random(1,3)
+   local sj = math.random(1,3)
+   local ini = math.random(5,7)
+   local inj = math.random(5,7)
    local module = nn.SpatialFullConvolutionMap(tt, ki, kj, si, sj)
    local input = torch.Tensor(from, inj, ini):zero()
    
@@ -1080,15 +1126,15 @@ function nntest.SpatialFullConvolutionMap()
 end
 
 function nntest.SpatialFullConvolutionCompare()
-    local from = math.ceil(torch.uniform(2,5))
-    local to = math.ceil(torch.uniform(2,7))
+    local from = math.random(2,4)
+    local to = math.random(2,5)
     local tt = nn.tables.full(from, to)
-    local ki = math.ceil(torch.uniform(2,7))
-    local kj = math.ceil(torch.uniform(2,7))
-    local si = math.ceil(torch.uniform(1,3))
-    local sj = math.ceil(torch.uniform(1,3))
-    local ini = math.ceil(torch.uniform(10,18))
-    local inj = math.ceil(torch.uniform(10,18))
+    local ki = math.random(2,5)
+    local kj = math.random(2,5)
+    local si = math.random(1,3)
+    local sj = math.random(1,3)
+    local ini = math.random(7,8)
+    local inj = math.random(7,8)
     local module1 = nn.SpatialFullConvolutionMap(tt, ki, kj, si, sj)
     local module2 = nn.SpatialFullConvolution(from, to, ki, kj, si, sj)
     local input = torch.rand(from, inj, ini)
@@ -1148,14 +1194,14 @@ local function batchcompare(smod, sin, plist)
 end
 
 function nntest.SpatialConvolutionBatchCompare()
-   local from = math.random(1,10)
-   local to = math.random(1,10)
-   local ki = math.random(1,10)
-   local kj = math.random(1,10)
+   local from = math.random(1,5)
+   local to = math.random(1,5)
+   local ki = math.random(1,5)
+   local kj = math.random(1,5)
    local si = math.random(1,4)
    local sj = math.random(1,4)
-   local outi = math.random(10,20)
-   local outj = math.random(10,20)
+   local outi = math.random(5,9)
+   local outj = math.random(5,9)
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
 
@@ -1166,14 +1212,14 @@ function nntest.SpatialConvolutionBatchCompare()
 end
 
 function nntest.SpatialFullConvolutionBatchCompare()
-   local from = math.random(1,10)
-   local to = math.random(1,10)
-   local ki = math.random(1,10)
-   local kj = math.random(1,10)
+   local from = math.random(1,5)
+   local to = math.random(1,5)
+   local ki = math.random(1,5)
+   local kj = math.random(1,5)
    local si = math.random(1,4)
    local sj = math.random(1,4)
-   local ini = math.random(10,18)
-   local inj = math.random(10,18)
+   local ini = math.random(5,9)
+   local inj = math.random(5,9)
 
    local module = nn.SpatialFullConvolution(from, to, ki, kj, si, sj)
    local input = torch.randn(from, inj, ini)
@@ -1184,13 +1230,13 @@ end
 
 
 function nntest.SpatialSubSamplingBatchCompare()
-   local from = math.random(1,10)
+   local from = math.random(1,6)
    local ki = math.random(1,5)
    local kj = math.random(1,5)
    local si = math.random(1,4)
    local sj = math.random(1,4)
-   local outi = math.random(10,20)
-   local outj = math.random(10,20)
+   local outi = math.random(6,10)
+   local outj = math.random(6,10)
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
    local module = nn.SpatialSubSampling(from, ki, kj, si, sj)
@@ -1200,13 +1246,13 @@ function nntest.SpatialSubSamplingBatchCompare()
 end
 
 function nntest.SpatialSubSampling()
-   local from = math.random(1,10)
+   local from = math.random(1,6)
    local ki = math.random(1,5)
    local kj = math.random(1,5)
    local si = math.random(1,4)
    local sj = math.random(1,4)
-   local outi = math.random(10,20)
-   local outj = math.random(10,20)
+   local outi = math.random(6,10)
+   local outj = math.random(6,10)
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
    local module = nn.SpatialSubSampling(from, ki, kj, si, sj)
@@ -1282,12 +1328,12 @@ end
 
 function nntest.SpatialMaxPooling()
    local from = math.random(1,5)
-   local ki = math.random(1,5)
-   local kj = math.random(1,5)
-   local si = math.random(1,4)
-   local sj = math.random(1,4)
-   local outi = math.random(10,20)
-   local outj = math.random(10,20)
+   local ki = math.random(1,4)
+   local kj = math.random(1,4)
+   local si = math.random(1,3)
+   local sj = math.random(1,3)
+   local outi = math.random(4,5)
+   local outj = math.random(4,5)
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
 
@@ -1320,8 +1366,8 @@ function nntest.SpatialLPPooling()
    local osizex = math.random(1,4)
    local osizey = math.random(1,4)
    local p = 2
-   local mx = math.random(2,8)
-   local my = math.random(2,8)
+   local mx = math.random(2,6)
+   local my = math.random(2,6)
    local dx = math.random(2,mx)
    local dy = math.random(2,my)
    local sizex = osizex*mx
@@ -1338,9 +1384,9 @@ function nntest.SpatialLPPooling()
 end
 
 function nntest.Sum()
-   local ini = math.random(10,20)
-   local inj = math.random(10,20)
-   local ink = math.random(10,20)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ini,inj,ink):zero()
    local module = nn.Sum(torch.random(1,3))
 
@@ -1353,9 +1399,9 @@ function nntest.Sum()
 end
 
 function nntest.Tanh()
-   local ini = math.random(5,10)
-   local inj = math.random(5,10)
-   local ink = math.random(5,10)
+   local ini = math.random(3,5)
+   local inj = math.random(3,5)
+   local ink = math.random(3,5)
    local input = torch.Tensor(ink, inj, ini):zero()
    
    local module = nn.Tanh()
@@ -1370,11 +1416,11 @@ end
 
 function nntest.TemporalConvolution()
    -- 1D
-   local from = math.random(1,10)
-   local to = math.random(1,10)
-   local ki = math.random(1,10)
+   local from = math.random(1,5)
+   local to = math.random(1,5)
+   local ki = math.random(1,5)
    local si = math.random(1,4)
-   local outi = math.random(10,20)
+   local outi = math.random(5,7)
    local ini = (outi-1)*si+ki
    local module = nn.TemporalConvolution(from, to, ki,si)
    local input = torch.Tensor(ini, from):zero()
@@ -1405,7 +1451,7 @@ function nntest.TemporalConvolution()
    end
    
    -- 2D
-   local nBatchFrame = 8
+   local nBatchFrame = 4
    local input = torch.Tensor(nBatchFrame, ini, from):zero()
    
    local err = jac.testJacobian(module, input)
@@ -1453,9 +1499,9 @@ end
 
 function nntest.TemporalSubSampling()
    local from = math.random(1,5)
-   local ki = math.random(1,10)
+   local ki = math.random(1,6)
    local si = math.random(1,4)
-   local outi = math.random(10,20)
+   local outi = math.random(6,9)
    local ini = (outi-1)*si+ki
    local module = nn.TemporalSubSampling(from, ki, si)
    local input = torch.Tensor(ini, from):zero()
@@ -1491,10 +1537,10 @@ function nntest.TemporalSubSampling()
 end
 
 function nntest.TemporalMaxPooling()
-   local from = math.random(10,10)
-   local ki = math.random(5,10)
+   local from = math.random(2,4)
+   local ki = math.random(5,7)
    local si = math.random(1,2)
-   local outi = math.random(50,90)
+   local outi = math.random(30,40)
    local ini = (outi-1)*si+ki
    local module = nn.TemporalMaxPooling(ki, si)
    local input = torch.Tensor(ini, from):zero()
@@ -1532,17 +1578,17 @@ function nntest.TemporalMaxPooling()
 end
 
 function nntest.VolumetricConvolution()
-   local from = math.random(2,5)
-   local to = math.random(2,5)
-   local kt = math.random(3,7)
-   local ki = math.random(3,7)
-   local kj = math.random(3,7)
-   local st = math.random(2,4)
-   local si = math.random(2,4)
-   local sj = math.random(2,4)
-   local outt = math.random(3,7)
-   local outi = math.random(3,7)
-   local outj = math.random(3,7)
+   local from = math.random(2,3)
+   local to = math.random(2,3)
+   local kt = math.random(3,4)
+   local ki = math.random(3,4)
+   local kj = math.random(3,4)
+   local st = math.random(2,3)
+   local si = math.random(2,3)
+   local sj = math.random(2,3)
+   local outt = math.random(3,4)
+   local outi = math.random(3,4)
+   local outj = math.random(3,4)
    local int = (outt-1)*st+kt
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
@@ -1580,17 +1626,17 @@ function nntest.VolumetricConvolution()
 end
 
 function nntest.VolumetricMaxPooling()
-   local from = math.random(2,5)
+   local from = math.random(2,3)
    local to = from
-   local kt = math.random(3,7)
-   local ki = math.random(3,7)
-   local kj = math.random(3,7)
-   local st = math.random(2,4)
-   local si = math.random(2,4)
-   local sj = math.random(2,4)
-   local outt = math.random(3,7)
-   local outi = math.random(3,7)
-   local outj = math.random(3,7)
+   local kt = math.random(3,4)
+   local ki = math.random(3,4)
+   local kj = math.random(3,4)
+   local st = math.random(2,3)
+   local si = math.random(2,3)
+   local sj = math.random(2,3)
+   local outt = math.random(3,4)
+   local outi = math.random(3,4)
+   local outj = math.random(3,4)
    local int = (outt-1)*st+kt
    local ini = (outi-1)*si+ki
    local inj = (outj-1)*sj+kj
@@ -1745,6 +1791,37 @@ function nntest.Module_getParameters_7()
    mytester:asserteq(p:nElement(), 121, 'error: incorrect number of elements in flat vector')
 end
 
+function nntest.Module_getParameters_8()
+   local function makeMLP(nin, ns)
+      local net = nn.Sequential()
+    
+      for k,v in ipairs(ns) do 
+         net:add(nn.Linear(nin, v))
+         nin = v
+      end
+      _,_ = net:getParameters()
+      return net
+   end
+
+  local mlp1 = makeMLP(10, {10,10})
+  local mlp2 = makeMLP(10, {10,10})
+
+  local net = nn.Sequential():add(mlp1:get(1))
+                             :add(mlp2:get(1))
+                             
+  -- clone the second MLP to ensure that the weights before calling getParameters are preserved
+  mlp2 = mlp2:clone() 
+
+  local p, gp = net:getParameters()
+
+  mytester:asserteq((p[{ {1,100} }] - net.modules[1].weight):norm(), 0, 'error when using partial realloc')
+  mytester:asserteq((p[{ {111,210} }] - net.modules[2].weight):norm(), 0, 'error when using partial realloc')
+  -- check that the weights have the same values as before get Parameters was called
+  mytester:asserteq((net.modules[1].weight - mlp1.modules[1].weight):norm(), 0, ' error when using partial realloc')
+  mytester:asserteq((net.modules[2].weight - mlp2.modules[1].weight):norm(), 0, ' error when using partial realloc')
+  
+end
+
 function nntest.PairwiseDistance()
    -- Note: testJacobian doesn't support table inputs, and rather than re-write
    -- it so that it does, I'll just use a split table module on the input.
@@ -1752,7 +1829,7 @@ function nntest.PairwiseDistance()
    -- test will break.
    for p = 1,4 do  -- test a few Lp norms
       -- TEST CASE 1: non-batch input, same code path but includes a resize
-      local ini = math.random(10,20)
+      local ini = math.random(3,5)
       local input = torch.Tensor(2, ini):zero()
       local module = nn.Sequential()
       module:add(nn.SplitTable(1))
@@ -1772,7 +1849,7 @@ function nntest.PairwiseDistance()
       mytester:assertlt(err,precision, ' error on non-batch fprop ') 
  
       -- TEST CASE 2: batch input
-      local inj = math.random(10,20)
+      local inj = math.random(3,5)
       input = torch.Tensor(2, inj, ini):zero()
 
       -- (Rebuild the module to avoid correlated tests)
@@ -1800,9 +1877,9 @@ function nntest.PairwiseDistance()
 end
 
 function nntest.LookupTable()
-   local totalIndex = math.random(10,100)
-   local nIndex = math.random(5,7)
-   local entry_size = math.random(5,7)
+   local totalIndex = math.random(6,9)
+   local nIndex = math.random(3,5)
+   local entry_size = math.random(2,5)
    local input = torch.IntTensor(nIndex):zero()
    local module = nn.LookupTable(totalIndex, entry_size)
    local minval = 1
@@ -1822,7 +1899,7 @@ function nntest.LookupTable()
    end
 
    -- 2D
-   local nframe = math.random(50,70)
+   local nframe = math.random(2,5)
    local input = torch.IntTensor(nframe, nIndex):zero()
 
    local err = jac.testJacobianParameters(module, input, module.weight, module.gradWeight, minval, maxval)
@@ -1854,8 +1931,8 @@ end
 function nntest.AddConstant()
   local nbatch = torch.random(3, 5)
   local f = torch.random(3, 5)
-  local h = torch.random(10,20)
-  local w = torch.random(10,20)
+  local h = torch.random(7,9)
+  local w = torch.random(7,9)
   local input = torch.rand(nbatch, f, h, w):mul(20):add(-10)  -- [-10, 10]
 
   local constant = torch.randn(1):squeeze()
@@ -1874,8 +1951,8 @@ end
 function nntest.MulConstant()
   local nbatch = torch.random(3, 5)
   local f = torch.random(3, 5)
-  local h = torch.random(10,20)
-  local w = torch.random(10,20)
+  local h = torch.random(7,9)
+  local w = torch.random(7,9)
   local input = torch.rand(nbatch, f, h, w):mul(20):add(-10)  -- [-10, 10]
 
   local constant = torch.randn(1):squeeze()
@@ -2164,7 +2241,7 @@ end
 
 function nntest.ConcatTable()
    -- Test tensor input
-   local input = torch.rand(10, 10, 10)
+   local input = torch.rand(5, 5, 5)
    local m = nn.Sequential()
    
    local concat = nn.ConcatTable()
